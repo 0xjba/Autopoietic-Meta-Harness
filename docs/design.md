@@ -42,7 +42,11 @@ Layer C  Meta-harness (Ollama, local)
     the control loop's effect observable within minutes and reproducible across runs.
     The model is documented as such and is not presented as a hardware measurement.
   - When disabled: the real VBAT rail is sampled through the ADC (P0.31), with the
-    read path enabled via P0.14.
+    read path enabled via P0.14. This path supports a final hardware validation
+    (Section 9, step 5) on a small-capacity cell, confirming that the qualitative
+    relationship between polling interval and depletion observed under the model also
+    holds on real hardware. This validation is the lowest build priority; the IMU
+    orientation and control-loop work take precedence.
 - All tuning parameters are isolated in `config.h`, which is the sole mutable artifact
   the meta-harness rewrites.
 - Telemetry transport: a custom GATT service with a single notify characteristic
@@ -143,3 +147,6 @@ scripts/             toolchain and model setup, run entry point
    source of truth, and the renderer.
 4. Pipeline: `arduino-cli` compile gate and serial-DFU flash, the mode policy, and the
    complete closed loop.
+5. Hardware battery validation (lowest priority, time permitting): repeat the loop on a
+   small-capacity cell with `AMH_VIRTUAL_BATTERY` disabled, and report whether the
+   modelled polling-interval-to-depletion relationship reproduces on real hardware.
