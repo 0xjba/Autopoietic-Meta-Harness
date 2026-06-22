@@ -66,12 +66,15 @@ arduino-cli upload  --fqbn Seeeduino:nrf52:xiaonRF52840Sense -p <PORT> firmware/
 
 ## Running the loop
 
+Run from the repository root so the firmware paths resolve, and set the device `port` in
+`host/amh/config.yaml` first.
+
 ```sh
-cd host
-.venv/bin/python -m amh --dry-run    # full cycle without flashing
-.venv/bin/python -m amh              # closed loop; set port in amh/config.yaml
+host/.venv/bin/python -m amh --config host/amh/config.yaml --dry-run   # full cycle, no flash
+host/.venv/bin/python -m amh --config host/amh/config.yaml             # closed loop
 ```
 
+On macOS the first run prompts for Bluetooth access; grant it (see PREREQUISITES.md).
 Execution mode is set in `host/amh/config.yaml`:
 
 - `guarded` — flash only if the Critic accepts and the Validator passes (default).

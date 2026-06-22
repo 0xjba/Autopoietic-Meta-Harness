@@ -3,5 +3,5 @@ battery_threshold: 3.5
 cooldown_s: 30
 max_interventions: 10
 model: qwen2.5-coder
-port: "/dev/cu.usbmodem1201"
+port: ""
 dry_run: false
