@@ -1448,8 +1448,6 @@ hardware.
 
 ```python
 import asyncio
-import json
-import os
 import time
 from pathlib import Path
 
