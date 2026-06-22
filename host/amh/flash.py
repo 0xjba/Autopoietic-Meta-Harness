@@ -1,9 +1,14 @@
+import os
 import re
 import subprocess
 from dataclasses import dataclass
 
 FLASH_RE = re.compile(r"Sketch uses (\d+) bytes \((\d+)%\)")
 RAM_RE = re.compile(r"Global variables use (\d+) bytes \((\d+)%\)")
+
+# The Seeed core's DFU packaging step runs a Click-based tool that aborts under
+# an ASCII locale, so arduino-cli is always invoked with a UTF-8 locale.
+_BUILD_ENV = {**os.environ, "LC_ALL": "en_US.UTF-8", "LANG": "en_US.UTF-8"}
 
 
 @dataclass
@@ -30,7 +35,7 @@ def parse_compile_output(text: str) -> CompileResult:
 def compile_firmware(sketch_dir: str, fqbn: str) -> CompileResult:
     proc = subprocess.run(
         ["arduino-cli", "compile", "--fqbn", fqbn, sketch_dir],
-        capture_output=True, text=True,
+        capture_output=True, text=True, env=_BUILD_ENV,
     )
     result = parse_compile_output(proc.stdout + proc.stderr)
     result.ok = result.ok and proc.returncode == 0
@@ -40,6 +45,6 @@ def compile_firmware(sketch_dir: str, fqbn: str) -> CompileResult:
 def flash_firmware(sketch_dir: str, fqbn: str, port: str) -> bool:
     proc = subprocess.run(
         ["arduino-cli", "upload", "--fqbn", fqbn, "-p", port, sketch_dir],
-        capture_output=True, text=True,
+        capture_output=True, text=True, env=_BUILD_ENV,
     )
     return proc.returncode == 0
