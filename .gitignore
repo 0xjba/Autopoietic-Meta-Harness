@@ -2,6 +2,7 @@
 host/.venv/
 __pycache__/
 *.pyc
+*.egg-info/
 
 # Arduino build artifacts
 firmware/**/build/
