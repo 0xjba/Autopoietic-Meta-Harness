@@ -38,6 +38,14 @@ they are not obvious:
    control loop is locale-independent; a manual `arduino-cli` invocation needs the locale
    exported.
 
+4. **Bluetooth permission (macOS).** The host reads telemetry over BLE, which requires the
+   running application to hold Bluetooth permission. Launched from an interactive terminal
+   (Terminal, iTerm), macOS shows a one-time authorization prompt on the first scan; grant
+   it and the loop runs. Launched from a non-interactive parent that cannot display the
+   prompt, CoreBluetooth aborts the process instead, so run the host from a terminal you
+   can authorize, or grant Bluetooth access to the parent application in System Settings →
+   Privacy & Security → Bluetooth. Linux has no equivalent gate.
+
 ## One-command setup
 
 ```sh
