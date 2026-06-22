@@ -21,7 +21,7 @@ def main():
         settings.dry_run = True
 
     usecase = AhrsUseCase(battery_threshold=settings.battery_threshold)
-    source = BleTelemetrySource(usecase.device_name, usecase.char_uuid)
+    source = BleTelemetrySource(usecase.service_uuid, usecase.char_uuid)
     deployer = Nrf52ArduinoDeployer(settings.fqbn, settings.sketch_dir,
                                     settings.config_h_path, settings.port)
     controller = Controller(settings, source, deployer, usecase, ollama.Client())

@@ -23,7 +23,7 @@ class Deployer(Protocol):
 class UseCase(Protocol):
     parameters: Sequence[Parameter]
     template_path: str
-    device_name: str
+    service_uuid: str
     char_uuid: str
 
     def parse(self, frame: bytes) -> object: ...

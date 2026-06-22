@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from amh.usecases.ahrs.parameters import PARAMETERS
-from amh.usecases.ahrs.schema import DEVICE_NAME, TELEMETRY_CHAR_UUID, Sample, parse
+from amh.usecases.ahrs.schema import SERVICE_UUID, TELEMETRY_CHAR_UUID, Sample, parse
 
 _TEMPLATE = str(Path(__file__).resolve().parent / "config.h.j2")
 
@@ -33,7 +33,7 @@ def _bounds_table() -> str:
 class AhrsUseCase:
     parameters = PARAMETERS
     template_path = _TEMPLATE
-    device_name = DEVICE_NAME
+    service_uuid = SERVICE_UUID
     char_uuid = TELEMETRY_CHAR_UUID
 
     def __init__(self, battery_threshold: float):
