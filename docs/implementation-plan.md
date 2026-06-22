@@ -398,9 +398,14 @@ git commit -m "Add virtual battery model with real VBAT fallback"
 ### Task 1.4: BLE telemetry service
 
 **Files:**
-- Create: `firmware/amh_node/ble.h`, `firmware/amh_node/ble.cpp`
+- Create: `firmware/amh_node/amh_ble.h`, `firmware/amh_node/amh_ble.cpp`
 
-- [ ] **Step 1: Write `firmware/amh_node/ble.h`**
+The module is named `amh_ble`, not `ble`: the Nordic SDK ships its own `ble.h`
+(included by the core's `bluefruit_common.h`), and arduino-cli places the sketch
+directory first on the include path, so a local `ble.h` shadows the SDK header and
+breaks every Bluefruit type.
+
+- [ ] **Step 1: Write `firmware/amh_node/amh_ble.h`**
 
 ```c
 #ifndef AMH_BLE_H
@@ -416,7 +421,7 @@ bool ble_connected();
 #endif // AMH_BLE_H
 ```
 
-- [ ] **Step 2: Write `firmware/amh_node/ble.cpp`**
+- [ ] **Step 2: Write `firmware/amh_node/amh_ble.cpp`**
 
 UUIDs are fixed so the host can subscribe by name. Bluefruit expects 128-bit UUIDs in
 least-significant-byte-first order.
@@ -426,7 +431,7 @@ Service `f0000001-1111-2222-3333-444455556666`, characteristic
 
 ```c
 #include <bluefruit.h>
-#include "ble.h"
+#include "amh_ble.h"
 
 static uint8_t SERVICE_UUID[16] = {
   0x66,0x66,0x55,0x55,0x44,0x44,0x33,0x33,
@@ -473,7 +478,7 @@ bool ble_connected() { return Bluefruit.connected(); }
 - [ ] **Step 3: Commit**
 
 ```bash
-git add firmware/amh_node/ble.h firmware/amh_node/ble.cpp
+git add firmware/amh_node/amh_ble.h firmware/amh_node/amh_ble.cpp
 git commit -m "Add BLE telemetry service"
 ```
 
@@ -492,7 +497,7 @@ git commit -m "Add BLE telemetry service"
 #include "config.h"
 #include "imu.h"
 #include "battery.h"
-#include "ble.h"
+#include "amh_ble.h"
 
 static unsigned long lastNotifyMs = 0;
 
@@ -519,6 +524,11 @@ void loop() {
 ```
 
 - [ ] **Step 2: Compile**
+
+Requires `scripts/setup_embedded.sh` to have run (it provides the `python` shim the
+core's UF2 step needs) and a UTF-8 locale (`export LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8`),
+without which the core's DFU packaging tool aborts. The host orchestrator sets this locale
+itself; a manual invocation needs it exported.
 
 Run:
 ```bash

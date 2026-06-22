@@ -130,7 +130,7 @@ bound the loop's activity.
 ## 8. Repository layout
 
 ```
-firmware/amh_node/   amh_node.ino, config.h, imu.{h,cpp}, ble.{h,cpp}, battery.{h,cpp}
+firmware/amh_node/   amh_node.ino, config.h, imu.{h,cpp}, amh_ble.{h,cpp}, battery.{h,cpp}
 host/amh/            telemetry.py, monitor.py, actor.py, critic.py, render.py,
                      flash.py, parameters.py, settings
 host/templates/      config.h.j2
