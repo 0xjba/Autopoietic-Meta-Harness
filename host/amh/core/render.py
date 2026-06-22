@@ -15,5 +15,5 @@ def render_config(params, values: dict, template_path: str) -> str:
         f"#define {p.name.ljust(width)} {_format_value(p.ctype, values[p.name])}"
         for p in params
     ]
-    template = Template(Path(template_path).read_text())
+    template = Template(Path(template_path).read_text(), keep_trailing_newline=True)
     return template.render(body="\n".join(lines))
