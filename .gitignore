@@ -1,0 +1,15 @@
+# Python
+host/.venv/
+__pycache__/
+*.pyc
+
+# Arduino build artifacts
+firmware/**/build/
+*.hex
+*.zip
+*.bin
+
+# Logs / runtime
+*.log
+telemetry/
+.amh_kill
