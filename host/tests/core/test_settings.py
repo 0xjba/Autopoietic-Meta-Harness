@@ -1,4 +1,4 @@
-from amh.settings import Settings, load_settings
+from amh.core.settings import Settings, load_settings
 
 
 def test_load_settings_applies_defaults(tmp_path):

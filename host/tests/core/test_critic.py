@@ -1,5 +1,6 @@
 import pytest
-from amh.critic import Verdict, parse_critic_response
+
+from amh.core.critic import Verdict, parse_critic_response
 
 
 def test_parse_critic_response_accept():

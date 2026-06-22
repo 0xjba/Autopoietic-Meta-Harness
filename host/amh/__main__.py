@@ -1,8 +1,13 @@
 import argparse
 import asyncio
 
-from amh.loop import run
-from amh.settings import load_settings
+import ollama
+
+from amh.adapters.nrf52.arduino_deployer import Nrf52ArduinoDeployer
+from amh.adapters.nrf52.ble_source import BleTelemetrySource
+from amh.core.controller import Controller
+from amh.core.settings import load_settings
+from amh.usecases.ahrs.objective import AhrsUseCase
 
 
 def main():
@@ -14,7 +19,13 @@ def main():
     settings = load_settings(args.config)
     if args.dry_run:
         settings.dry_run = True
-    asyncio.run(run(settings))
+
+    usecase = AhrsUseCase(battery_threshold=settings.battery_threshold)
+    source = BleTelemetrySource(usecase.device_name, usecase.char_uuid)
+    deployer = Nrf52ArduinoDeployer(settings.fqbn, settings.sketch_dir,
+                                    settings.config_h_path, settings.port)
+    controller = Controller(settings, source, deployer, usecase, ollama.Client())
+    asyncio.run(controller.run())
 
 
 if __name__ == "__main__":

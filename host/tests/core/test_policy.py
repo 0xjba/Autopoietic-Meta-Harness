@@ -1,4 +1,4 @@
-from amh.policy import FlashDecision, decide_flash
+from amh.core.policy import decide_flash
 
 
 def test_guarded_requires_critic_and_validator():

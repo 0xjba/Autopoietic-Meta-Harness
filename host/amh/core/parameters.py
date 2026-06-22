@@ -12,29 +12,17 @@ class Parameter:
     allowed: tuple = field(default_factory=tuple)   # discrete set, if constrained
 
 
-PARAMETERS = [
-    Parameter("IMU_POLL_RATE_MS", "int", 10, 200, 20,
-              "IMU sampling interval in milliseconds; higher reduces active duty"),
-    Parameter("FILTER_ALPHA", "float", 0.80, 0.99, 0.96,
-              "Complementary filter gyroscope weight"),
-    Parameter("BLE_TX_POWER", "int", -40, 8, 0,
-              "BLE transmit power in dBm",
-              allowed=(-40, -20, -16, -12, -8, -4, 0, 2, 3, 4, 5, 6, 7, 8)),
-]
-
-PARAMETERS_BY_NAME = {p.name: p for p in PARAMETERS}
+def defaults(params) -> dict:
+    return {p.name: p.default for p in params}
 
 
-def defaults() -> dict:
-    return {p.name: p.default for p in PARAMETERS}
-
-
-def validate(values: dict) -> list[str]:
+def validate(params, values: dict) -> list[str]:
+    by_name = {p.name: p for p in params}
     errors: list[str] = []
     for key in values:
-        if key not in PARAMETERS_BY_NAME:
+        if key not in by_name:
             errors.append(f"unknown parameter {key}")
-    for p in PARAMETERS:
+    for p in params:
         if p.name not in values:
             errors.append(f"{p.name} missing")
             continue
@@ -53,9 +41,9 @@ def validate(values: dict) -> list[str]:
     return errors
 
 
-def json_schema() -> dict:
+def json_schema(params) -> dict:
     props = {}
-    for p in PARAMETERS:
+    for p in params:
         node: dict = {"type": "integer" if p.ctype == "int" else "number"}
         if p.allowed:
             node["enum"] = list(p.allowed)
@@ -69,7 +57,7 @@ def json_schema() -> dict:
             "parameters": {
                 "type": "object",
                 "properties": props,
-                "required": [p.name for p in PARAMETERS],
+                "required": [p.name for p in params],
                 "additionalProperties": False,
             },
             "rationale": {

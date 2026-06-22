@@ -1,5 +1,4 @@
-from amh.flash import parse_compile_output
-
+from amh.adapters.nrf52.arduino_deployer import parse_compile_output
 
 SAMPLE = (
     "Sketch uses 123456 bytes (15%) of program storage space. Maximum is 811008 bytes.\n"
@@ -9,6 +8,7 @@ SAMPLE = (
 
 def test_parse_compile_output_extracts_usage():
     r = parse_compile_output(SAMPLE)
-    assert r.flash_bytes == 123456
-    assert r.ram_bytes == 45678
-    assert r.flash_pct == 15
+    assert r["flash_bytes"] == 123456
+    assert r["ram_bytes"] == 45678
+    assert r["flash_pct"] == 15
+    assert r["found"] is True

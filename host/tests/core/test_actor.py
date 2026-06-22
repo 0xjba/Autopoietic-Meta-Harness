@@ -1,5 +1,6 @@
 import pytest
-from amh.actor import Proposal, parse_actor_response
+
+from amh.core.actor import Proposal, parse_actor_response
 
 
 def test_parse_actor_response_extracts_parameters_and_rationale():
