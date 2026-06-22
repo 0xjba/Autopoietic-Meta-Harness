@@ -15,7 +15,7 @@ assume macOS with Homebrew. Linux and Windows are not covered.
 | Seeeduino nRF52 core | 1.1.13 |
 | Seeed Arduino LSM6DS3 | 2.0.5 |
 | Ollama | 0.30.10 |
-| Model | `llama3.1` (8B instruct, the `latest` build) |
+| Model | `llama3.1` (8B instruct, `latest` build, digest `46e0c10c039e`) |
 
 Python dependencies are pinned in `host/pyproject.toml`: `bleak==3.0.2`, `ollama==0.6.2`,
 `jinja2==3.1.6`, `pyyaml==6.0.3`, `pytest==9.1.1`. The board core and library versions are
