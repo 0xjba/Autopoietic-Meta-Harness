@@ -75,6 +75,33 @@ Layer C  Meta-harness (Ollama, local)
   the core's bundled `adafruit-nrfutil` to reset the node into the Adafruit bootloader
   and perform serial DFU.
 
+### 2.4 Software decomposition
+
+The contribution is a generic meta-harness, not a single-board script. The host software
+is therefore decomposed along three axes so that the framework is reusable beyond this
+board and this sensing task:
+
+- **Core framework** (`amh.core`): the control loop, the Actor and Critic mechanisms, the
+  parameter validation and schema engine, the rendering engine, and the flash policy. The
+  core depends only on three interfaces and contains nothing board- or task-specific.
+- **Board adapter** (`amh.adapters.nrf52`): the concrete transport and toolchain — a BLE
+  telemetry source and an `arduino-cli` compile-and-flash deployer.
+- **Use-case adapter** (`amh.usecases.ahrs`): the sensing task — the tunable parameter set,
+  the telemetry schema and parser, the constraint that triggers an intervention, the
+  firmware configuration template, and the domain prompts for the Actor and Critic.
+
+The core defines three interfaces (`amh.core.interfaces`):
+
+- `TelemetrySource.stream(on_frame)` — delivers raw telemetry frames; transport-specific.
+- `Deployer.build(config_text)` and `Deployer.deploy()` — render-and-validate, then flash;
+  toolchain-specific.
+- `UseCase` — supplies the parameters, frame parser, violation test, template, and prompts.
+
+The entry point (`amh.__main__`) is the only place that names concrete implementations: it
+constructs the nRF52 adapter and the AHRS use-case and injects them into the core
+controller. Re-targeting to another board is a new adapter; another sensing task is a new
+use-case; neither edits the core.
+
 ## 3. Control objective
 
 A single trade-off is optimised: power against orientation accuracy. Raising
@@ -85,25 +112,28 @@ objectives are in scope.
 
 ## 4. Parameter single source of truth
 
-A single declaration (`host/amh/parameters.py`) defines each tunable parameter: name,
-type, inclusive bounds, default, and its slot in the C++ template. This declaration
-drives, without duplication:
+A single declaration in the use-case (`host/amh/usecases/ahrs/parameters.py`) defines each
+tunable parameter: name, type, inclusive bounds, default, and discrete domain where
+applicable. Expressed with the core `Parameter` type, this declaration drives, without
+duplication:
 
 - the Actor's structured-output JSON schema,
 - the Critic's review context,
 - the Validator's bounds check,
 - the renderer that produces `config.h`.
 
-A single source prevents the model from proposing unsupported keys or out-of-range
-values. The initial parameter set is `IMU_POLL_RATE_MS`, `FILTER_ALPHA`, and
-`BLE_TX_POWER`.
+The validation, schema, and rendering logic that consume this declaration are generic and
+live in the core; only the declaration itself is use-case-specific. A single source
+prevents the model from proposing unsupported keys or out-of-range values. The initial
+parameter set is `IMU_POLL_RATE_MS`, `FILTER_ALPHA`, and `BLE_TX_POWER`.
 
 ## 5. Configuration rendering
 
 The model never emits C++. It emits validated numeric values; the host renders
-`config.h` by substituting those values into a fixed, pre-tested template
-(`host/templates/config.h.j2`). Rendered output is therefore always syntactically
-valid and within bounds, and identical inputs always produce an identical file.
+`config.h` by substituting those values into a fixed, pre-tested template owned by the
+use-case (`host/amh/usecases/ahrs/config.h.j2`). Rendered output is therefore always
+syntactically valid and within bounds, and identical inputs always produce an identical
+file.
 
 ## 6. Execution modes and safety
 
@@ -130,12 +160,16 @@ bound the loop's activity.
 ## 8. Repository layout
 
 ```
-firmware/amh_node/   amh_node.ino, config.h, imu.{h,cpp}, amh_ble.{h,cpp}, battery.{h,cpp}
-host/amh/            telemetry.py, monitor.py, actor.py, critic.py, render.py,
-                     flash.py, parameters.py, settings
-host/templates/      config.h.j2
-docs/                design.md, architecture.md
-scripts/             toolchain and model setup, run entry point
+firmware/amh_node/        amh_node.ino, config.h, imu.{h,cpp}, amh_ble.{h,cpp}, battery.{h,cpp}
+host/amh/
+  core/                   controller, actor, critic, parameters, render, policy,
+                          monitor, settings, interfaces
+  adapters/nrf52/         ble_source (BLE telemetry), arduino_deployer (compile + flash)
+  usecases/ahrs/          parameters, schema (telemetry), objective (prompts + trigger),
+                          config.h.j2
+  __main__.py             wires the nrf52 adapter and ahrs use-case into the core
+docs/                     design.md, implementation-plan.md
+scripts/                  toolchain, model, and host setup
 ```
 
 ## 9. Build order

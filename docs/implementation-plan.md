@@ -1655,3 +1655,88 @@ git commit -m "Add real-battery validation result"
 ```bash
 git add README.md && git commit -m "Add project README"
 ```
+
+---
+
+## Phase 7: Modularization into framework, board adapter, and use-case
+
+Restructure the host package so the generic meta-harness is reusable beyond this board and
+this sensing task (design Section 2.4). This is a reorganization of existing, tested code
+behind three interfaces; the full test suite and the firmware compile are the regression
+gates and must stay green throughout.
+
+### Target structure
+
+```
+host/amh/
+  core/
+    interfaces.py     TelemetrySource, Deployer, UseCase, BuildOutcome
+    controller.py     generic control loop (replaces loop.py)
+    actor.py          propose(client, model, schema, system, user) -> Proposal
+    critic.py         review(client, model, system, user) -> Verdict
+    parameters.py     Parameter; defaults/validate/json_schema take a params list
+    render.py         render_config(params, values, template_path)
+    monitor.py        should_intervene(violation, seconds_since_last, cooldown_s)
+    policy.py         decide_flash (unchanged)
+    settings.py       Settings (config loader; flat, shared)
+  adapters/nrf52/
+    ble_source.py     BleTelemetrySource(device_name, char_uuid)
+    arduino_deployer.py  Nrf52ArduinoDeployer(fqbn, sketch_dir, config_h_path, port)
+  usecases/ahrs/
+    parameters.py     PARAMETERS (the three tunables)
+    schema.py         Sample, parse(frame), observation(sample), DEVICE_NAME, char UUID
+    objective.py      AhrsUseCase: violation test + Actor/Critic prompts
+    config.h.j2       firmware configuration template
+  __main__.py         constructs the nrf52 adapter + ahrs use-case, injects into Controller
+```
+
+### Interfaces (`core/interfaces.py`)
+
+```python
+class TelemetrySource(Protocol):
+    async def stream(self, on_frame: Callable[[bytes], Awaitable[None]]) -> None: ...
+
+class Deployer(Protocol):
+    def build(self, config_text: str) -> "BuildOutcome": ...
+    def deploy(self) -> bool: ...
+
+class UseCase(Protocol):
+    parameters: Sequence[Parameter]
+    template_path: str
+    device_name: str
+    char_uuid: str
+    def parse(self, frame: bytes) -> object: ...
+    def observation(self, sample: object) -> dict: ...
+    def is_violation(self, sample: object) -> bool: ...
+    def actor_system(self) -> str: ...
+    def actor_user(self, window: list[dict], current: dict) -> str: ...
+    def critic_system(self) -> str: ...
+    def critic_user(self, current: dict, proposed: dict, rationale: list) -> str: ...
+```
+
+### Module mapping (old -> new)
+
+| Old | New | Change |
+|---|---|---|
+| `loop.py` | `core/controller.py` | depends on interfaces; uses injected source/deployer/usecase |
+| `actor.py` | `core/actor.py` | `propose` takes `schema, system, user`; prompts move to use-case |
+| `critic.py` | `core/critic.py` | `review` takes `system, user` |
+| `parameters.py` | `core/parameters.py` | `defaults/validate/json_schema` take a `params` argument |
+| `render.py` | `core/render.py` | `render_config` takes `params, values, template_path` |
+| `monitor.py` | `core/monitor.py` | `should_intervene(violation, since, cooldown)` (generic) |
+| `policy.py`, `settings.py` | `core/` | moved unchanged |
+| `telemetry_client.py` | `adapters/nrf52/ble_source.py` | yields raw frames; parsing moves to use-case |
+| `flash.py` | `adapters/nrf52/arduino_deployer.py` | `build`/`deploy`; keeps `parse_compile_output` |
+| `telemetry.py` | `usecases/ahrs/schema.py` | Sample + parse + observation + UUID/name |
+| (Actor/Critic prompt text) | `usecases/ahrs/objective.py` | `AhrsUseCase` with domain prompts and trigger |
+| `templates/config.h.j2` | `usecases/ahrs/config.h.j2` | template owned by the use-case |
+
+Tests move alongside their modules under `tests/core/`, `tests/adapters/`, `tests/usecases/`.
+
+### Verification gate
+
+- [ ] Full suite green: `cd host && .venv/bin/python -m pytest -q`.
+- [ ] Import wiring: `.venv/bin/python -c "import amh.__main__"`.
+- [ ] Firmware still compiles (unchanged).
+- [ ] Live model integration through the new controller path still proposes in-domain
+  parameters and a Critic verdict.
