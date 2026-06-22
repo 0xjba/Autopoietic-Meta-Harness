@@ -1,4 +1,4 @@
-from amh.core.parameters import defaults, json_schema, validate
+from amh.core.parameters import Parameter, defaults, json_schema, validate
 from amh.usecases.ahrs.parameters import PARAMETERS
 
 
@@ -19,9 +19,19 @@ def test_validate_rejects_unknown_key():
 
 
 def test_validate_rejects_disallowed_discrete_value():
-    bad = defaults(PARAMETERS)
-    bad["BLE_TX_POWER"] = 1
-    assert any("BLE_TX_POWER" in e for e in validate(PARAMETERS, bad))
+    params = [Parameter("MODE", "int", 0, 3, 0, "discrete knob", allowed=(0, 2))]
+    assert any("MODE" in e for e in validate(params, {"MODE": 1}))
+    assert validate(params, {"MODE": 2}) == []
+
+
+def test_schema_uses_enum_for_discrete_and_range_otherwise():
+    params = [
+        Parameter("R", "int", 0, 10, 1, "range"),
+        Parameter("D", "int", 0, 9, 0, "discrete", allowed=(0, 5)),
+    ]
+    props = json_schema(params)["properties"]["parameters"]["properties"]
+    assert "enum" not in props["R"] and props["R"]["minimum"] == 0
+    assert props["D"]["enum"] == [0, 5]
 
 
 def test_schema_lists_all_parameters():

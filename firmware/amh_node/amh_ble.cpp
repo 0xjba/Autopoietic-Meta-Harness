@@ -13,9 +13,9 @@ static uint8_t CHAR_UUID[16] = {
 static BLEService amhService(SERVICE_UUID);
 static BLECharacteristic amhTelemetry(CHAR_UUID);
 
-void ble_init(int tx_power) {
+void ble_init() {
   Bluefruit.begin();
-  Bluefruit.setTxPower(tx_power);
+  Bluefruit.setTxPower(0);   // fixed 0 dBm; no longer a tuned parameter
   Bluefruit.setName("AMH-Node");
 
   amhService.begin();

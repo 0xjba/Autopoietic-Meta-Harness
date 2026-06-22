@@ -1,7 +1,7 @@
 #ifndef AMH_BLE_H
 #define AMH_BLE_H
 
-void ble_init(int tx_power);
+void ble_init();
 
 // Notifies an 8-byte payload: float32 drift_variance, float32 battery (LE).
 void ble_notify(float drift_variance, float battery);

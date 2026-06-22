@@ -11,7 +11,7 @@ class Settings:
     battery_threshold: float = 3.5
     cooldown_s: float = 30.0
     max_interventions: int = 10
-    model: str = "qwen2.5-coder"
+    model: str = "llama3.1"
     fqbn: str = "Seeeduino:nrf52:xiaonRF52840Sense"
     port: str = ""
     sketch_dir: str = "firmware/amh_node"

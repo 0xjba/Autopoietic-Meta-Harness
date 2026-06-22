@@ -9,7 +9,7 @@ static unsigned long lastNotifyMs = 0;
 void setup() {
   imu_init();
   battery_init();
-  ble_init(BLE_TX_POWER);
+  ble_init();
 }
 
 void loop() {

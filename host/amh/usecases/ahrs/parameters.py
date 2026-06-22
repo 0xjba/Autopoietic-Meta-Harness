@@ -1,11 +1,23 @@
 from amh.core.parameters import Parameter
 
 PARAMETERS = [
-    Parameter("IMU_POLL_RATE_MS", "int", 10, 200, 20,
-              "IMU sampling interval in milliseconds; higher reduces active duty"),
-    Parameter("FILTER_ALPHA", "float", 0.80, 0.99, 0.96,
-              "Complementary filter gyroscope weight"),
-    Parameter("BLE_TX_POWER", "int", -40, 8, 0,
-              "BLE transmit power in dBm",
-              allowed=(-40, -20, -16, -12, -8, -4, 0, 2, 3, 4, 5, 6, 7, 8)),
+    Parameter(
+        name="IMU_POLL_RATE_MS",
+        ctype="int", minimum=10, maximum=100, default=20,
+        description="Time between IMU reads in milliseconds.",
+        heuristic_rule=(
+            "Higher values save battery but cause cursor lag and stutter on fast hand "
+            "flicks."
+        ),
+    ),
+    Parameter(
+        name="FILTER_ALPHA",
+        ctype="float", minimum=0.80, maximum=0.99, default=0.96,
+        description="Complementary filter gyroscope weight.",
+        heuristic_rule=(
+            "If IMU_POLL_RATE_MS is increased (slower reads), you MUST lower FILTER_ALPHA "
+            "to trust the accelerometer more, otherwise the cursor drifts across the screen "
+            "while the hand is held still."
+        ),
+    ),
 ]

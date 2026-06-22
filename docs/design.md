@@ -62,12 +62,17 @@ Layer C  Meta-harness (Ollama, local)
 ### 2.3 Layer C — meta-harness
 
 - Actor: a local model served by Ollama. Input is the recent telemetry window, the
-  current parameter values, the declared bounds, and the control objective. Output is
-  constrained by an Ollama structured-output schema at temperature 0 to
+  current parameter values, the declared bounds, the use-case physics heuristics, and the
+  control objective. Output is constrained by an Ollama structured-output schema to
   `{ parameters, rationale }`, where `parameters` are numeric and `rationale` is a
-  short per-decision justification logged for analysis.
-- Critic: a second, independent model pass that reviews the Actor's proposal against
-  the objective and telemetry and returns accept or reject with a reason.
+  short per-decision justification logged for analysis. The Actor runs at a low
+  temperature (0.2) so it explores the parameter space rather than collapsing to a single
+  fixed reply; its proposals are therefore not deterministic.
+- Critic: a second pass that reviews the Actor's proposal against the objective, the
+  telemetry, and the heuristics, returning accept or reject with a reason. It uses the
+  same model weights at temperature 0 with an adversarial persona — a single resident
+  model avoids loading a second set of weights on a memory-constrained host, while the
+  distinct persona and deterministic temperature keep the gate repeatable.
 - Validator: bounds-checks every proposed value, renders `config.h` from a fixed
   template, then runs `arduino-cli compile` as a memory-safety gate, confirming
   success and that flash and RAM usage remain within device limits.
@@ -104,36 +109,44 @@ use-case; neither edits the core.
 
 ## 3. Control objective
 
-A single trade-off is optimised: power against orientation accuracy. Raising
-`IMU_POLL_RATE_MS` lengthens deep-sleep intervals and reduces active time, lowering
-power draw at the cost of increased drift. Under a battery constraint the Actor is
-expected to raise the polling interval, trading accuracy for endurance. No further
-objectives are in scope.
+The instantiation is an IMU air mouse: a single trade-off is optimised, power against
+cursor responsiveness. Raising `IMU_POLL_RATE_MS` lengthens deep-sleep intervals and
+reduces active time, lowering power draw at the cost of cursor lag. The two tunables are
+physically coupled: a slower poll rate requires a lower `FILTER_ALPHA` (trusting the
+accelerometer more) or the cursor drifts while the hand is still. This coupling is encoded
+as a per-parameter heuristic (Section 4) and supplied to the Actor and Critic, so the model
+reasons about the consequence of each change rather than guessing magnitudes. Under a
+battery constraint the Actor is expected to raise the polling interval and lower the filter
+weight together. No further objectives are in scope.
 
 ## 4. Parameter single source of truth
 
 A single declaration in the use-case (`host/amh/usecases/ahrs/parameters.py`) defines each
-tunable parameter: name, type, inclusive bounds, default, and discrete domain where
-applicable. Expressed with the core `Parameter` type, this declaration drives, without
-duplication:
+tunable parameter: name, type, inclusive bounds, default, a discrete domain where
+applicable, and a `heuristic_rule` describing its physical effect. Expressed with the core
+`Parameter` type, this declaration drives, without duplication:
 
 - the Actor's structured-output JSON schema,
-- the Critic's review context,
+- the Actor and Critic prompts, whose physics section is built by iterating the parameters'
+  `heuristic_rule` fields, so the prompt scales automatically with whatever parameters are
+  loaded,
 - the Validator's bounds check,
 - the renderer that produces `config.h`.
 
 The validation, schema, and rendering logic that consume this declaration are generic and
 live in the core; only the declaration itself is use-case-specific. A single source
-prevents the model from proposing unsupported keys or out-of-range values. The initial
-parameter set is `IMU_POLL_RATE_MS`, `FILTER_ALPHA`, and `BLE_TX_POWER`.
+prevents the model from proposing unsupported keys or out-of-range values. The parameter
+set is `IMU_POLL_RATE_MS` and `FILTER_ALPHA`.
 
 ## 5. Configuration rendering
 
 The model never emits C++. It emits validated numeric values; the host renders
 `config.h` by substituting those values into a fixed, pre-tested template owned by the
 use-case (`host/amh/usecases/ahrs/config.h.j2`). Rendered output is therefore always
-syntactically valid and within bounds, and identical inputs always produce an identical
-file.
+syntactically valid and within bounds. Rendering is deterministic in its inputs: a given
+set of parameter values always produces an identical file. The Actor that chooses those
+values runs at a non-zero temperature, so the proposal for a given telemetry input is not
+itself deterministic.
 
 ## 6. Execution modes and safety
 
@@ -155,7 +168,8 @@ bound the loop's activity.
 - Embedded: `arduino-cli` with the non-mbed core `Seeeduino:nrf52` and FQBN
   `Seeeduino:nrf52:xiaonRF52840Sense` (board index
   `package_seeeduino_boards_index.json`). Libraries: Seeed LSM6DS3, Adafruit Bluefruit.
-- Model: Ollama serving `qwen2.5-coder`, with the model name configurable.
+- Model: Ollama serving `llama3.1` (8B instruct), with the model name configurable. One
+  resident model serves both the Actor (temperature 0.2) and the Critic (temperature 0).
 
 ## 8. Repository layout
 

@@ -2,6 +2,6 @@ mode: guarded
 battery_threshold: 3.5
 cooldown_s: 30
 max_interventions: 10
-model: qwen2.5-coder
+model: llama3.1
 port: ""
 dry_run: false

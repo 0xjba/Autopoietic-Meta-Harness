@@ -9,7 +9,8 @@ class Parameter:
     maximum: float
     default: float
     description: str
-    allowed: tuple = field(default_factory=tuple)   # discrete set, if constrained
+    heuristic_rule: str = ""                         # physical effect, for the Actor prompt
+    allowed: tuple = field(default_factory=tuple)    # discrete set, if constrained
 
 
 def defaults(params) -> dict:

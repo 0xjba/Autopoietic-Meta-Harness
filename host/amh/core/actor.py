@@ -16,8 +16,10 @@ def parse_actor_response(data: dict) -> Proposal:
     return Proposal(parameters=data["parameters"], rationale=data.get("rationale", []))
 
 
+# The Actor is allowed a small temperature so it explores the parameter space rather than
+# collapsing to a single fixed response. This makes proposals non-deterministic by design.
 def propose(client: ollama.Client, model: str, schema: dict, system: str,
-            user: str) -> Proposal:
+            user: str, temperature: float = 0.2) -> Proposal:
     response = client.chat(
         model=model,
         messages=[
@@ -25,6 +27,6 @@ def propose(client: ollama.Client, model: str, schema: dict, system: str,
             {"role": "user", "content": user},
         ],
         format=schema,
-        options={"temperature": 0},
+        options={"temperature": temperature},
     )
     return parse_actor_response(json.loads(response["message"]["content"]))

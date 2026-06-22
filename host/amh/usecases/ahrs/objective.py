@@ -7,18 +7,19 @@ from amh.usecases.ahrs.schema import SERVICE_UUID, TELEMETRY_CHAR_UUID, Sample, 
 _TEMPLATE = str(Path(__file__).resolve().parent / "config.h.j2")
 
 _ACTOR_SYSTEM = (
-    "You tune firmware for a battery-constrained inertial sensor node. "
-    "Raising IMU_POLL_RATE_MS lengthens deep-sleep intervals and lowers power "
-    "draw at the cost of orientation accuracy. When the battery is below its "
-    "threshold, reduce power draw while keeping accuracy as high as the budget "
-    "allows. Respond only with the requested JSON."
+    "You tune firmware for a battery-constrained IMU air mouse. The device reports "
+    "orientation drift and battery voltage; your parameters trade battery life against "
+    "cursor responsiveness. When the battery is below its threshold, reduce power draw, "
+    "but respect the physics rules so the cursor does not lag or drift. Respond only with "
+    "the requested JSON."
 )
 
 _CRITIC_SYSTEM = (
-    "You review a proposed firmware tuning change for a battery-constrained "
-    "inertial node. Accept only if the change plausibly reduces power draw under "
-    "a low battery while not needlessly destroying orientation accuracy. "
-    "Respond only with the requested JSON."
+    "You review a proposed firmware tuning change for a battery-constrained IMU air mouse. "
+    "Accept only if the change plausibly reduces power draw under a low battery while "
+    "respecting the stated physics rules (a slower poll rate requires a lower filter alpha, "
+    "or the cursor drifts). Reject changes that would cause cursor lag or drift. Respond "
+    "only with the requested JSON."
 )
 
 
@@ -28,6 +29,10 @@ def _bounds_table() -> str:
         domain = f"one of {list(p.allowed)}" if p.allowed else f"[{p.minimum}, {p.maximum}]"
         rows.append(f"- {p.name} ({p.ctype}): {domain}; {p.description}")
     return "\n".join(rows)
+
+
+def _heuristics() -> str:
+    return "\n".join(f"- {p.name}: {p.heuristic_rule}" for p in PARAMETERS if p.heuristic_rule)
 
 
 class AhrsUseCase:
@@ -55,9 +60,12 @@ class AhrsUseCase:
         return (
             f"Battery threshold: {self.battery_threshold} V.\n"
             f"Current parameters: {json.dumps(current)}.\n"
-            f"Tunable parameters and domains:\n{_bounds_table()}\n"
+            f"Tunable parameters and domains:\n{_bounds_table()}\n\n"
+            f"Physics rules for this device:\n{_heuristics()}\n\n"
             f"Recent telemetry (oldest first): {json.dumps(window)}.\n"
-            "Propose new parameter values and a rationale per changed parameter."
+            "Propose new parameter values and a rationale per changed parameter. Scale the "
+            "change to how far the battery is below the threshold, and obey the physics "
+            "rules."
         )
 
     def critic_system(self) -> str:
@@ -68,6 +76,7 @@ class AhrsUseCase:
             f"Battery threshold: {self.battery_threshold} V.\n"
             f"Current parameters: {json.dumps(current)}.\n"
             f"Proposed parameters: {json.dumps(proposed)}.\n"
+            f"Physics rules for this device:\n{_heuristics()}\n"
             f"Actor rationale: {json.dumps(rationale)}.\n"
             "Accept or reject this change."
         )

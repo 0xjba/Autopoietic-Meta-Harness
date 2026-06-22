@@ -53,7 +53,7 @@ Or run the steps individually:
 
 ```sh
 ./scripts/setup_embedded.sh   # Seeed nRF52 core, LSM6DS3 library, python shim
-./scripts/setup_model.sh      # pull the local model (default: qwen2.5-coder)
+./scripts/setup_model.sh      # pull the local model (default: llama3.1)
 ./scripts/setup_host.sh       # Python 3.13 virtual environment and dependencies
 ```
 

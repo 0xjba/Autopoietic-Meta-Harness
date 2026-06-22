@@ -26,7 +26,9 @@ def parse_critic_response(data: dict) -> Verdict:
     return Verdict(accept=bool(data["accept"]), reason=str(data["reason"]))
 
 
-def review(client: ollama.Client, model: str, system: str, user: str) -> Verdict:
+# The Critic stays fully deterministic: it is a ruthless, repeatable gate, not an explorer.
+def review(client: ollama.Client, model: str, system: str, user: str,
+           temperature: float = 0.0) -> Verdict:
     response = client.chat(
         model=model,
         messages=[
@@ -34,6 +36,6 @@ def review(client: ollama.Client, model: str, system: str, user: str) -> Verdict
             {"role": "user", "content": user},
         ],
         format=CRITIC_SCHEMA,
-        options={"temperature": 0},
+        options={"temperature": temperature},
     )
     return parse_critic_response(json.loads(response["message"]["content"]))

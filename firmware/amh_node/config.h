@@ -5,6 +5,5 @@
 // This checked-in copy holds the default values.
 #define IMU_POLL_RATE_MS 20
 #define FILTER_ALPHA     0.9600f
-#define BLE_TX_POWER     0
 
 #endif // AMH_CONFIG_H
