@@ -46,16 +46,19 @@ git add -A && git commit -m "Add source tree skeleton"
 ### Task 0.2: Host Python environment
 
 **Files:**
-- Create: `host/pyproject.toml`
+- Create: `host/pyproject.toml`, `scripts/setup_host.sh`
 
-- [ ] **Step 1: Install a pinned interpreter and create the venv**
+`bleak` requires Python >=3.10 and is unverified on the system's 3.14, so the host is
+pinned to 3.13. The Homebrew `python@3.13` bottle on this platform links `pyexpat` against
+an incompatible system `libexpat`, which breaks `pip`; a managed CPython 3.13 via `uv`
+avoids that linkage and still yields a standard pinned venv.
 
-`bleak` requires Python >=3.10 and is unverified on the system's 3.14. Pin to 3.13.
+- [ ] **Step 1: Provision the interpreter and venv with uv**
 
 Run:
 ```bash
-brew install python@3.13
-/opt/homebrew/bin/python3.13 -m venv host/.venv
+brew install uv
+uv venv host/.venv --python 3.13
 host/.venv/bin/python --version
 ```
 Expected: `Python 3.13.x`
@@ -85,15 +88,16 @@ testpaths = ["tests"]
 
 Run:
 ```bash
-host/.venv/bin/pip install -e 'host[dev]'
+uv pip install --python host/.venv/bin/python -e 'host[dev]'
 host/.venv/bin/python -c "import bleak, ollama, jinja2, yaml; print('ok')"
 ```
-Expected: `ok`
+Expected: `ok`. `scripts/setup_host.sh` captures Steps 1 and 3 for reproducibility.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add host/pyproject.toml && git commit -m "Add host Python project and dependencies"
+git add host/pyproject.toml scripts/setup_host.sh
+git commit -m "Add host Python project and dependencies"
 ```
 
 ### Task 0.3: Embedded toolchain
