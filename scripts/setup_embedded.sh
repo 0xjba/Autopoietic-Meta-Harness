@@ -12,6 +12,6 @@ fi
 arduino-cli config init --overwrite
 arduino-cli config add board_manager.additional_urls "$INDEX"
 arduino-cli core update-index
-arduino-cli core install Seeeduino:nrf52
-arduino-cli lib install "Seeed Arduino LSM6DS3"
+arduino-cli core install Seeeduino:nrf52@1.1.13
+arduino-cli lib install "Seeed Arduino LSM6DS3@2.0.5"
 arduino-cli board listall | grep -i xiao

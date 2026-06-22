@@ -4,13 +4,13 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "bleak==3.0.2",
-    "ollama>=0.4",
-    "jinja2>=3.1",
-    "pyyaml>=6.0",
+    "ollama==0.6.2",
+    "jinja2==3.1.6",
+    "pyyaml==6.0.3",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest==9.1.1"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

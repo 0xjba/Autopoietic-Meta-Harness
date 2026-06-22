@@ -42,7 +42,14 @@ scripts/             toolchain, model, and host setup
 
 ## Setup
 
-Requires Homebrew, `arduino-cli`, `ollama`, and `uv`.
+Tested on macOS arm64 with Homebrew; requires `arduino-cli`, `ollama`, and `uv`. Exact
+versions and platform notes are in [PREREQUISITES.md](PREREQUISITES.md).
+
+```sh
+./scripts/bootstrap.sh        # all of the below, then verify (tests + compile)
+```
+
+Or run the steps individually:
 
 ```sh
 ./scripts/setup_embedded.sh   # Seeed nRF52 core, LSM6DS3 library, python shim
